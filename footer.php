@@ -23,6 +23,10 @@
     </div>
 
     <div class="scroll-tools mr-2">
+        <a class="btn btn-link btn-action uni-bg bg-blur uni-shadow dropdown-toggle flex-center"
+        href="/wp-admin/post-new.php" target="_blank" tabindex="0">
+        <i class="czs-pen"></i>
+        </a>
         <div class="dropdown" hover-show perspective>
             <a class="btn btn-link btn-action uni-bg bg-blur uni-shadow dropdown-toggle flex-center"
                href="javascript:void(0);" tabindex="0">
