@@ -1,5 +1,8 @@
 const $modules = new function () {
     const that = this;
+    this.topicsStore = Vue.observable({
+        topics: [],
+      });
     // 作者卡片
     this.Affiliate = {
         name: 'affiliate',
@@ -117,9 +120,18 @@ const $modules = new function () {
             'tools': {
                 name: 'tools',
                 template: `
-                    <button v-if="name === 'topic'" class="btn btn-link btn-action btn-sm flex-center">
+                    <div v-if="name === 'topic'" class="popover popover-bottom">
+                        <button class="btn btn-link btn-action btn-sm flex-center">
                         #
-                    </button>
+                        </button>
+                        <div class="editor-tool-topic popover-container">
+                            <div class="card uni-card card uni-card uni-bg uni-shadow bg-blur">
+                                <div class="card-body flex-center" style="flex-wrap: wrap">
+                                    <button v-for="topic in topics" :key="topic" class="btn btn-link btn-action" @click="$emit('topic', topic.name)">{{ topic.name }}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div v-else-if="name === 'emoji'" class="popover popover-bottom">
                         <button class="btn btn-link btn-action btn-sm flex-center">
                             <i class="dashicons dashicons-smiley"></i>
@@ -154,6 +166,18 @@ const $modules = new function () {
                         emojis: ['🥳', '😀', '😂', '😉', '😘', '😍', '🤪', '😓', '🙁', '😕', '😳', '😱', '😧', '😡', '👨🏻‍💻', '🙅🏻‍♂️', '🎉', '👏', '🎁', '🚀', '🌈'],
                     }
                 },
+                computed: {
+                    topics() {
+                      const specialTopic = { id: "special", name: "#", count: 0 };
+                      return [
+                        specialTopic,
+                        ...$modules.topicsStore.topics.map((topic) => ({
+                          ...topic,
+                          name: "#" + topic.name+' ',
+                        })),
+                      ];
+                    },
+                  },
             },
             'attachment-chips': {
                 name: 'attachment-chips',
@@ -213,7 +237,7 @@ const $modules = new function () {
                         <div class="editor-tool d-flex">
                             <slot name="tool">
                                 <slot name="tool-l"></slot>
-                                <tools v-for="name in features" :key="name" :name="name" :disabled="name === 'upload' && uploading" @click.native="e => handleTools(name, e)" @emoji="insertText" />
+                                <tools v-for="name in features" :key="name" :name="name" :disabled="name === 'upload' && uploading" @click.native="e => handleTools(name, e)" @emoji="insertText"  @topic="insertText" />
                                 <slot name="tool-r"></slot>
                             </slot>
                         </div>
@@ -273,9 +297,6 @@ const $modules = new function () {
             },
             handleTools(name, e) {
                 switch (name) {
-                    case 'topic':
-                        this.insertText('#');
-                        break;
                     case 'ul':
                         this.execCommand('insertUnorderedList');
                         break;
@@ -821,31 +842,39 @@ const $modules = new function () {
         data() {
             return {
                 loading: false,
-                topics: [],
             }
         },
+        computed: {
+            topics() {
+              return $modules.topicsStore.topics;
+            },
+        },
         created() {
-            this.getTopics();
+            if (this.topics.length === 0) {
+                this.getTopics();
+              }
         },
         methods: {
             getTopics() {
-                this.loading = true;
-                $h.ajax({
-                    query: { action: 'get_topics' }
+              this.loading = true;
+              $h.ajax({
+                query: { action: "get_topics" },
+              })
+                .then(({ data }) => {
+                  $modules.topicsStore.topics = data.map((item) => ({
+                    ...item,
+                    name: item.name.replace(/&nbsp;/g, ""),
+                  }));
                 })
-                  .then(({ data }) => {
-                      this.topics = data.map(item => ({
-                          ...item,
-                          name: item.name.replace(/&nbsp;/g, '')
-                      }));
-                  }).finally(() => {
-                    this.loading = false;
+                .finally(() => {
+                  this.loading = false;
+                  console.log($modules.topicsStore.topics);
                 });
             },
             handleTopic(topic) {
-                this.$emit('topic', topic.name);
+              this.$emit("topic", topic.name);
             },
-        }
+          },
     };
     // 笔记卡片
     this.NoteCard = {
